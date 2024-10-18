@@ -16,15 +16,21 @@ const GuessPokemonImage = () => {
     const TOTAL_QUESTIONS = 10;
     const TIME_LIMIT = 10; 
 
-    const getRandomPokemon = async (id = Math.floor(Math.random() * 150) - 1) => {
-        const response = await fetch(`http://pokeapi.com/api/v2/pokemon/${id}`);
-        const data = response.data;
-        return data;
+    const getRandomPokemon = async (id = Math.floor(Math.random() * 150) + 1) => {
+        try {            
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error("Failed to fetch the Pokemon:", error);
+            return null;
+        }
     };
 
     const generateOptions = async () => {
         setLoading(true);
-        const correctOptions = getRandomPokemon();
+        const correctOptions = await getRandomPokemon();
         const incorrectOptions = [];
 
         while (incorrectOptions.length < 3) {
@@ -32,7 +38,6 @@ const GuessPokemonImage = () => {
             if (pokemon.name !== correctOptions.name) {
                 incorrectOptions.push(pokemon);
             }
-            
         }
 
         const allOptions = [...incorrectOptions, correctOptions];
@@ -57,7 +62,9 @@ const GuessPokemonImage = () => {
 
     const handleAnswerClick = (answer) => {
         setSelectedAnswer(answer);
-        const isAnswerCorrect = selectedAnswer.sprites.front_default === correctPokemon.sprites.front_defailt;
+        const isAnswerCorrect = answer.sprites.front_default === correctPokemon.sprites.front_default;
+        setIsCorrect(isAnswerCorrect);
+
         if (isAnswerCorrect) {
             setScore(prevScore => prevScore + 1);
         }
@@ -84,9 +91,9 @@ const GuessPokemonImage = () => {
 
     const restartGame = () => {
         setScore(0);
-        setSelectedAnswer(0);
+        setSelectedAnswer(null);
         setQuestionCount(0);
-        setIsGameOver(true);
+        setIsGameOver(false);
         generateOptions();
     };
 
@@ -94,67 +101,74 @@ const GuessPokemonImage = () => {
 
     if (isGameOver) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-                <h1 className="text-4xl font-bold text-blue-600 mb-8">Game Over!</h1>
-                <p className="text-2xl font-semibold mb-4">Your final score: {score} / {TOTAL_QUESTIONS}</p>   
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-red-500 to-blue-500">
+                <h1 className="text-5xl font-extrabold text-white mb-8">Game Over!</h1>
+                <p className="text-2xl font-semibold text-yellow-300 mb-4">Your final score: {score} / {TOTAL_QUESTIONS}</p>
                 <button
-                    className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 py-2 px-6 rounded-lg font-bold transition duration-300"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-red-800 py-2 px-6 rounded-full shadow-lg font-bold transition duration-300"
                     onClick={restartGame}
                 >
                     Play Again
                 </button>
             </div>
         );
-    };
+    }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <h1 className="text-4xl font-bold text-blue-600 mb-8">Who is That Pokémon?</h1>
-
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-red-500 to-blue-500">
+            <h1 className="text-5xl font-extrabold text-white mb-6 drop-shadow-md">Who is That Pokémon?</h1>
+    
             <button
-                className="bg-yellow-400 text-xl py-2 px-5 rounded-md text-white"
+                className="bg-white text-gray-800 text-lg py-2 px-5 rounded-full border-2 border-gray-300 shadow-sm font-bold"
                 disabled
             >
                 Time left: {timer} seconds
             </button>
-            <div className="text-xl mb-8">Question {questionCount + 1} of {TOTAL_QUESTIONS}</div>
-
+    
+            <div className="text-2xl my-3 text-yellow-300 font-bold drop-shadow-md">Question {questionCount + 1} of {TOTAL_QUESTIONS}</div>
+    
             {correctPokemon && (
-                <div className="mb-8 p-4 bg-white rounded-lg shadow-lg transition duration-500">
-                    <p>{correctPokemon.name}</p>
+                <div className="mb-6 px-6 py-3 bg-white rounded-xl shadow-md border-gray-300 border-4 transition duration-500">
+                    <p className="text-center text-gray-800 font-bold text-2xl">{correctPokemon.name}</p>
                 </div>
             )}
-
-            <div className="grid grid-cols-2 gap-4">
-                {options.map((option) => (
-                    <button
-                        key={option.name}
-                        className={`py-2 px-4 rounded-lg text-white font-semibold ${
-                            selectedAnswer
-                                ? option.name === correctPokemon.name
-                                    ? 'bg-green-500'
-                                    : 'bg-red-500'
-                                : 'bg-blue-600 hover:bg-blue-700'
-                        } transition duration-300`}
-                        onClick={() => handleAnswerClick(option)}
-                        disabled={selectedAnswer != null}
-                    >
-                        <img 
-                            src={correctPokemon.sprites.front_default} 
-                            alt={correctPokemon.name}
-                            className="w-32 h-32 object-contain"
-                        />
-                    </button>
-                ))}
+    
+            {/* Semi-transparent container for Pokémon options */}
+            <div className="bg-white bg-opacity-20 p-8 rounded-lg shadow-xl border-2 border-gray-300">
+                <div className="grid grid-cols-2 gap-6">
+                    {options.map((option) => (
+                        <button
+                            key={option.name}
+                            className={`py-3 px-4 rounded-full text-white font-extrabold shadow-lg ${
+                                selectedAnswer
+                                    ? option.name === correctPokemon.name
+                                        ? 'bg-green-500'
+                                        : 'bg-red-500'
+                                    : 'bg-blue-700 hover:bg-blue-800'
+                            } transition duration-300`}
+                            onClick={() => handleAnswerClick(option)}
+                            disabled={selectedAnswer != null}
+                        >
+                            <img 
+                                src={option.sprites.front_default} 
+                                alt={option.name}
+                                className="w-32 h-32 object-contain"
+                            />
+                        </button>
+                    ))}
+                </div>
             </div>
-
+    
+            {/* Feedback message wrapped in a container to stand out */}
             {selectedAnswer && (
-                <div className="mt-6 text-center">
-                    {isCorrect ? (
-                        <p className="text-xl text-green-600 font-semibold">🎉 Correct!</p>
-                    ) : (
-                        <p className="text-xl text-red-600 font-semibold">❌ Oops! The correct answer was {correctPokemon.sprites.front_default}</p>
-                    )}
+                <div className="mt-4 text-center">
+                    <div className="inline-block px-5 py-3 bg-white bg-opacity-90 rounded-lg shadow-lg">
+                        {isCorrect ? (
+                            <p className="text-2xl text-green-500 font-bold drop-shadow-md">🎉 Correct!</p>
+                        ) : (
+                            <p className="text-2xl text-red-500 font-bold drop-shadow-md">❌ Oops! The correct answer was {correctPokemon.name}</p>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

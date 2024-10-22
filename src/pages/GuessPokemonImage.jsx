@@ -161,7 +161,7 @@ const GuessPokemonImage = () => {
     
             {/* Feedback message wrapped in a container to stand out */}
             {selectedAnswer && (
-                <div className="mt-4 text-center">
+                <div className="my-4 text-center">
                     <div className="inline-block px-5 py-3 bg-white bg-opacity-90 rounded-lg shadow-lg">
                         {isCorrect ? (
                             <p className="text-2xl text-green-500 font-bold drop-shadow-md">🎉 Correct!</p>
